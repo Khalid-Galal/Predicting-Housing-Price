@@ -1,0 +1,153 @@
+#read train data
+
+dataset<-read.csv("train.csv")
+print(dataset)
+str(dataset)
+
+#read test data
+
+testData<-read.csv("test.csv")
+print(testData)
+str(testData)
+
+#clean train data
+
+dataset<-dataset[c(-3,-8,-10)]
+dataset$Age = ifelse(is.na(dataset$Age),
+                      ave(dataset$Age, FUN = function(x) mean(x, na.rm = TRUE)),dataset$Age)
+
+dataset$Fare = ifelse(is.na(dataset$Fare),
+                     ave(dataset$Fare, FUN = function(x) mean(x, na.rm = TRUE)),dataset$Fare)
+
+dataset$Parch = ifelse(is.na(dataset$Parch),
+                     ave(dataset$Parch, FUN = function(x) mean(x, na.rm = TRUE)),dataset$Parch)
+# Encoding categorical data
+dataset$Sex = factor(dataset$Sex,
+                    levels = c("male", "female"),
+                    labels = c(0, 1))
+
+dataset$take.off = factor(dataset$take.off,
+                     levels = c("C", "Q","S"),
+                     labels = c(1,2,3))
+
+#clean test data
+testData<-testData[c(-3,-8,-10)]
+testData$Age = ifelse(is.na(testData$Age),
+                      ave(testData$Age, FUN = function(x) mean(x, na.rm = TRUE)),testData$Age)
+
+testData$Fare = ifelse(is.na(testData$Fare),
+                       ave(testData$Fare, FUN = function(x) mean(x, na.rm = TRUE)),testData$Fare)
+
+testData$Parch = ifelse(is.na(testData$Parch),
+                        ave(testData$Parch, FUN = function(x) mean(x, na.rm = TRUE)),testData$Parch)
+
+# Encoding categorical data
+
+testData$Sex = factor(testData$Sex,
+                      levels = c("male", "female"),
+                      labels = c(0, 1))
+
+
+testData$take.off = factor(testData$take.off,
+                           levels = c("C", "Q","S"),
+                           labels = c(1,2,3))
+
+
+library(Hmisc)
+dataset$Age <- impute(dataset$Age, mean)
+dataset$Fare <- impute(dataset$Fare, mean)
+dataset$Parch <- impute(dataset$Age, mean)
+dataset$Sex <- impute(dataset$Sex, mean)
+dataset$SibSp <- impute(dataset$SibSp, mean)
+dataset$take.off <- impute(dataset$take.off, mean)
+dataset$Survived <- impute(dataset$Survived, mean)
+dataset$Pclass <- impute(dataset$Pclass, mean)
+
+#clean test data
+library(Hmisc)
+testData$Age <- impute(testData$Age, mean)
+testData$Fare <- impute(testData$Fare, mean)
+testData$Parch <- impute(testData$Age, mean)
+testData$Sex <- impute(testData$Sex, mean)
+testData$SibSp <- impute(testData$SibSp, mean)
+testData$take.off <- impute(testData$take.off, mean)
+testData$Survived <- impute(testData$Survived, mean)
+testData$Pclass <- impute(testData$Pclass, mean)
+
+#check if there are null in the train data
+# sum(is.na(dataset$SibSp))
+# sum(is.na(dataset$Pclass))
+# sum(is.na(dataset$Sex))
+# sum(is.na(dataset$Age))
+# sum(is.na(dataset$Parch))
+# sum(is.na(dataset$Fare))
+# sum(is.na(dataset$take.off))
+# sum(is.na(dataset$Survived))
+# 
+# #check if there are null in the test data
+# sum(is.na(testData$SibSp))
+# sum(is.na(testData$Pclass))
+# sum(is.na(testData$Sex))
+# sum(is.na(testData$Age))
+# sum(is.na(testData$Parch))
+# sum(is.na(testData$Fare))
+# sum(is.na(testData$take.off))
+# sum(is.na(testData$Survived))
+
+
+
+
+
+
+
+
+# data <- read.csv("train.csv", header = TRUE)
+# independent_vars <- c("Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "take.off")
+# dependent_var <- "Survived"
+# dataset <- data.frame(data[, independent_vars], data[, Survived])
+
+install.packages("caret")
+library(caret) 
+
+model <- lm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + take.off, data = data)
+
+
+trainIndex <- createDataPartition(dataset$Survived, p = 0.7, list = FALSE)
+train_data <- dataset[trainIndex, ]
+validation_data <- dataset[-trainIndex, ]
+
+
+
+# Train a logistic regression model
+#model <- train(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + take.off, data = train_data, method = "glm", family = "binomial")
+
+# Train an SVM model
+
+
+install.packages("randomForest")
+library(randomForest)
+# Build the model
+#model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + take.off, data = train_data , na.action = na.exclude)
+predictions <- predict(model, newdata = validation_data)
+predictions <- ifelse(predictions > 0.5, 1, 0)
+
+
+table(predictions, validation_data$Survived)
+accuracy <- mean(predictions == validation_data$Survived) * 100
+cat(paste0("Random Forrest Accuracy : ", round(accuracy, 2), "%"))
+mean(predictions == testData$Survived)
+
+
+nrow(testData)
+sum(is.na(testData))
+length(predictions)
+
+# submission <- data.frame(PassengerId = testData$PassengerId, Survived = predictions)
+
+#Save the predictions to a CSV file
+submission <- data.frame(PassengerId = testData$PassengerId[1:length(predictions)], Survived = predictions)
+write.csv(submission, file = "submission.csv", row.names = FALSE)
+
+
+
+
